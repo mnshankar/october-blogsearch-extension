@@ -263,34 +263,6 @@ class SearchResult extends ComponentBase
      */
     protected function listPosts()
     {
-        // get posts in excluded category
-        $blockedPosts = [];
-        $categories = BlogCategory::with(['posts' => function ($q) {
-            $q->select('post_id');
-        }])
-            ->whereIn('id', $this->property('excludeCategories'))
-            ->get();
-
-        $categories->each(function ($item) use (&$blockedPosts) {
-            $item->posts->each(function ($item) use (&$blockedPosts) {
-                $blockedPosts[] = $item->post_id;
-            });
-        });
-
-        // get only posts from included categories
-        $allowedPosts = [];
-        $categories = BlogCategory::with(['posts' => function ($q) {
-            $q->select('post_id');
-        }])
-            ->whereIn('id', $this->property('includeCategories'))
-            ->get();
-
-        $categories->each(function ($item) use (&$allowedPosts) {
-            $item->posts->each(function ($item) use (&$allowedPosts) {
-                $allowedPosts[] = $item->post_id;
-            });
-        });
-
         // Filter posts
         $posts = BlogPost::with(['categories' => function ($q) {
             if (!is_null($this->property('excludeCategories'))) {
@@ -300,8 +272,6 @@ class SearchResult extends ComponentBase
                 $q->whereIn('id', $this->property('includeCategories'));
             }
         }])
-            ->whereNotIn('id', $blockedPosts)
-            ->whereIn('id', $allowedPosts)
             ->where(function ($q) {
                 $q->where('title', 'LIKE', "%{$this->searchTerm}%")
                     ->orWhere('content', 'LIKE', "%{$this->searchTerm}%")
